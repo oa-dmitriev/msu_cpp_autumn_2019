@@ -14,7 +14,7 @@ sum_by_columns: sum_by_columns.o
 sum_by_columns.o: sum_by_columns.cpp
 	$(CC) -c sum_by_columns.cpp
 
-run:
+run: all
 	./sum_by_columns
 	./sum_by_rows
 
