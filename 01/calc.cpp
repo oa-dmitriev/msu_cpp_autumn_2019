@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <exception>
 
-
 class WrongInput : public std::exception {
 	public:
 		const char* what() const noexcept {
@@ -90,7 +89,6 @@ void print(std::vector<std::string> &v) {
 	}
 	std::cout << std::endl;
 }
-
 
 int main(int argc, char* argv[]) {
 	std::string expr;
