@@ -1,12 +1,11 @@
 import subprocess
 
 def check(expr):
-	process = subprocess.run(["./calc", expr], check=True, stdout=subprocess.PIPE, universal_newlines=True)
-	output = process.stdout
-	try:
-		n = float(output)
-		return n
-	except ValueError:
+	process = subprocess.run(["./calc", expr], stdout=subprocess.PIPE, universal_newlines=True)
+	err = process.returncode
+	if err == 0:
+		return float(process.stdout)
+	else:
 		return None
 
 assert(check("2 + 3 * 4 - -2") == 16)

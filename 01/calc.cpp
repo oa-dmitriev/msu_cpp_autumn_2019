@@ -1,12 +1,18 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <exception>
+
+
+class WrongInput : public std::exception {
+	public:
+		const char* what() const noexcept {
+			return "Wrong input format: ";
+		}
+};
 
 bool is_number(const std::string& s) {
-    std::string::const_iterator it = s.begin();
-    while (it != s.end() && std::isdigit(*it)) 
-		++it;
-    return !s.empty() && it == s.end();
+    return std::all_of(s.begin(), s.end(), isdigit);
 }
 
 double next_number(std::vector<std::string> &v, size_t &pos) {
@@ -19,12 +25,12 @@ double next_number(std::vector<std::string> &v, size_t &pos) {
 	if (pos < v.size() && is_number(v[pos])) {
 		return sign * atof(v[pos].c_str());
 	}
-	throw 0;
+	throw WrongInput();
 }
 
 double mul(std::vector<std::string> &v, size_t &pos) {
 	if (pos >= v.size()) {
-		throw 0;
+		throw WrongInput();
 	}
 
 	double res = next_number(v, pos);
@@ -71,7 +77,7 @@ std::vector<std::string> parse(std::string &s) {
 		} else if (is_op(s[i])) {
 			token.append(1, s[i]);
 		} else {
-			throw 0;
+			throw WrongInput();
 		}
 		v.push_back(token);
 	}
@@ -85,22 +91,24 @@ void print(std::vector<std::string> &v) {
 	std::cout << std::endl;
 }
 
+
 int main(int argc, char* argv[]) {
 	std::string expr;
-	if (argc == 2) {
-		expr = std::string(argv[1]);
-		std::vector<std::string> v;
-		try {
-			v = parse(expr);
-			double result;
-			size_t pos = 0;
-			result = sum(v, pos);
-			std::cout << result;
-		} catch (...) {
-			//std::cerr << "Wrong input format" << std::endl;
-		}
-	} else {
-		//std::cerr << "Wrong input format" << std::endl;
+	if (argc != 2) {
+		std::cerr << "Wrong input format: " << expr << std::endl;
+		return 1;
+	}
+	expr = std::string(argv[1]);
+	std::vector<std::string> v;
+	try {
+		v = parse(expr);
+		double result;
+		size_t pos = 0;
+		result = sum(v, pos);
+		std::cout << result;
+	} catch (WrongInput& ex) {
+		std::cerr << ex.what() << expr << std::endl;
+		return 1;
 	}
 	return 0;
 }
