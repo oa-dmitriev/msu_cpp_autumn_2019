@@ -11,7 +11,7 @@ class WrongInput : public std::exception {
 };
 
 bool is_number(const std::string& s) {
-    return std::all_of(s.begin(), s.end(), isdigit);
+	return std::all_of(s.begin(), s.end(), isdigit);
 }
 
 double next_number(std::vector<std::string> &v, size_t &pos) {
