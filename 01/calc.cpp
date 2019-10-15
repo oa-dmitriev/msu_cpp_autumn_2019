@@ -12,10 +12,10 @@ public:
 		return msg.c_str();
 	}
 	
-	int getErrorLine() const throw() {
+	int getErrorLine() const noexcept {
 		return line;
 	}
-	int getPos() const throw() {
+	int getPos() const noexcept {
 		return pos;
 	}
 private:
@@ -60,7 +60,7 @@ double mul(const std::vector<std::string> &v, size_t &pos) {
 	return res;
 }
 
-double sum(const std::vector<std::string> &v, size_t &pos) {
+double sum(const std::vector<std::string> &v, size_t pos) {
 	double res = mul(v, pos);
 	while (pos < v.size()) {
 		if (v[pos] == "+") {
@@ -112,9 +112,8 @@ int main(int argc, char* argv[]) {
 	std::vector<std::string> v;
 	v = parse(expr);
 	try {
-		double result;
-		size_t pos = 0;
-		result = sum(v, pos);
+		double result;;
+		result = sum(v, 0);
 		std::cout << result;
 	} catch (WrongInput& ex) {
 		std::cerr << "Error in line: " << ex.getErrorLine()
