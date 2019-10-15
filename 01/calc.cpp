@@ -38,7 +38,7 @@ double next_number(const std::vector<std::string> &v, size_t &pos) {
 	if (pos < v.size() && is_number(v[pos])) {
 		return sign * atof(v[pos].c_str());
 	}
-	throw WrongInput("Expected number but got operator", __LINE__, pos);
+	throw WrongInput("Expected number but got something else", __LINE__, pos);
 }
 
 double mul(const std::vector<std::string> &v, size_t &pos) {
@@ -105,7 +105,7 @@ void print(const std::vector<std::string> &v) {
 int main(int argc, char* argv[]) {
 	std::string expr;
 	if (argc != 2) {
-		std::cerr << "plese enter a string as an argument" << expr << std::endl;
+		std::cerr << "Plese enter a string as an argument" << expr << std::endl;
 		return 1;
 	}
 	expr = std::string(argv[1]);
@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
 	} catch (WrongInput& ex) {
 		std::cerr << "Error in line: " << ex.getErrorLine()
 			  << ". " << ex.what() << " at position "
-			  << ex.getPos() << " of the input expression: " 
-			  << expr << std::endl;
+			  << ex.getPos() << " in the input expression: " 
+			  << "\"" << expr << "\"" << std::endl;
 		return 1;
 	}
 	return 0;
