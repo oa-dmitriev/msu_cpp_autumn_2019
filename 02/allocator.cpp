@@ -1,7 +1,5 @@
 #include <iostream>
-
 #include "allocator.h"
-
 
 LinearAllocator::LinearAllocator(size_t maxSize) :
 					maxSize(maxSize),
