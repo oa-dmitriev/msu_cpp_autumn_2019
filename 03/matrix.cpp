@@ -13,7 +13,7 @@ int& Row::operator [](size_t j) {
 	return arr[row * col + j];
 }
 
-int Row::operator [](size_t j) const {
+const int Row::operator [](size_t j) const {
 	if (j >= col) {
 		throw std::out_of_range("");
 	}
@@ -31,7 +31,7 @@ Row Matrix::operator [](size_t i) {
 	return r;
 }
 
-Row Matrix::operator [](size_t i) const {
+const Row Matrix::operator [](size_t i) const {
 	if (i >= row) {
 		throw std::out_of_range("");
 	}

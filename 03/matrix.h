@@ -4,7 +4,7 @@ class Row {
 public:
 	Row(size_t row, size_t col, int* arr);
 	int& operator [](size_t j);
-	int operator [](size_t j) const;
+	const int operator [](size_t j) const;
 private:
 	size_t row;
 	size_t col;
@@ -16,7 +16,7 @@ public:
 	Matrix(size_t row, size_t col);
 	~Matrix();
 	Row operator [](size_t i);
-	Row operator [](size_t i) const;
+	const Row operator [](size_t i) const;
 	Matrix& operator *=(int val); 
 	bool operator ==(const Matrix& other) const;
 	bool operator !=(const Matrix& other) const;

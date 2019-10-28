@@ -3,6 +3,15 @@
 #include "matrix.h"
 
 int main() {
+
+	
+	Matrix m(1, 1);
+	m[0][0] = 100;
+	
+	const Matrix& m0 = m;
+	m[0][0] = m0[0][0] + 4;
+	assert(m[0][0] == 104);
+
 	Matrix m1(1, 3);
 	for (int i = 0; i < 3; ++i) {
 		m1[0][i] = i;
@@ -21,7 +30,8 @@ int main() {
 	} catch (...) {
 		std::cout << "line " << __LINE__ << std::endl;
 	}
-	
+
+		
 	const Matrix& m2 = m1;
 	m1 *= 2;
 	assert(m2[0][0] == 0);
