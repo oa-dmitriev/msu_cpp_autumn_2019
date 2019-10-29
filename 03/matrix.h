@@ -17,7 +17,7 @@ public:
 	~Matrix();
 	Row operator [](size_t i);
 	const Row operator [](size_t i) const;
-	Matrix& operator *=(int val); 
+	const Matrix& operator *=(int val); 
 	bool operator ==(const Matrix& other) const;
 	bool operator !=(const Matrix& other) const;
 	size_t getRows();

@@ -39,7 +39,7 @@ const Row Matrix::operator [](size_t i) const {
 	return r;
 }
 
-Matrix& Matrix::operator *=(int val) {
+const Matrix& Matrix::operator *=(int val) {
 	for (size_t i = 0; i < row; ++i) {
 		for (size_t j = 0; j < col; ++j) {
 			arr[i * col + j] = arr[i * col + j] * val;	
