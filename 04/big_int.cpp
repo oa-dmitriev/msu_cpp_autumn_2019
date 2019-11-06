@@ -3,9 +3,8 @@
 #include <cstring>
 #include <cstddef>
 #include <sstream>
-#include <limits>
+#include <assert.h>
 
-//-----------------------------------------------------------------------------
 const int base = 1000000000;
 class BigInt {
 public:
@@ -252,7 +251,6 @@ std::ostream& operator<< (std::ostream& out, const BigInt& obj) {
 	}
 	return out;
 }
-//-----------------------------------------------------------------------------
 
 std::string toString(const BigInt& value)
 {
@@ -277,76 +275,47 @@ void check(int64_t x, int64_t y)
     }
 }
 
-void doCheckEqual(const BigInt& actual, const char* expected, size_t line)
-{
-    const auto str = toString(actual);
-    if (str != expected)
-    {
-        std::cout << "at line " << line << ": " << str << " != " << expected << '\n';
-    }
-}
-
-#define checkEqual(x, y) do { doCheckEqual((x), (y), __LINE__); } while(0)
-#define checkTrue(cond) do { if (!(cond)) std::cout << "at line " << __LINE__ << ": " << #cond << '\n'; } while(0)
-
 int main() {
-	BigInt x = 3;
-    checkEqual(x, "3");
+	BigInt x = 10;
+	assert(toString(x) == "10");
     BigInt y = x;
-    checkEqual(y, "3");
+    assert(toString(y) == "10");
     BigInt z;
-    checkEqual(z, "0");
+    assert(toString(z) == "0");
+    assert(toString(BigInt(-10)) == "-10");
+    assert(x == x);
+    assert(y == x);
+    assert(x != z);
+    assert(y != z);
 
-    checkEqual(BigInt(-10), "-10");
+    assert(!(y > x));
+    assert(!(x < y));
+  	assert(x > z);
+  	assert(y > z);
+  	assert(x < 11);
 
-    checkTrue(x == y);
-    checkTrue(y == x);
-    checkTrue(x != z);
-    checkTrue(z != x);
+  	assert(BigInt(-12) > BigInt(-123213));
+  	assert(y >= x);
+  	assert(y <= x);
+  	assert(y >= BigInt(4));
 
-    z = y;
-    checkEqual(z, "3");
+   	assert(BigInt(0) == -BigInt(0));
 
-    x = 100;
-    checkEqual(x, "100");
+   	assert(toString(BigInt(3) + BigInt(2)) == "5");
+   	assert(toString(BigInt(2) + BigInt(-3)) == "-1");
+   	assert(toString(BigInt(-2) + BigInt(-3)) == "-5");
 
-    checkTrue(!(x < x));
-    checkTrue(x < 200);
-    checkTrue(BigInt(50) < x);
-    checkTrue(BigInt(-500) < x);
-    checkTrue(BigInt(-500) < BigInt(-200));
+   	assert(toString(BigInt(10) + BigInt(-10)) == "0");
+   	assert(toString(-BigInt(10) + BigInt(10)) == "0");
 
-    checkTrue(!(x > x));
-    checkTrue(BigInt(200) > x);
-    checkTrue(x > BigInt(50));
-    checkTrue(x > BigInt(-500));
-    checkTrue(BigInt(-200) > BigInt(-500));
-
-    checkTrue(x <= x);
-    checkTrue(x <= 200);
-    checkTrue(BigInt(50) <= x);
-    checkTrue(BigInt(-500) <= x);
-    checkTrue(BigInt(-500) <= BigInt(-200));
-
-    checkTrue(x >= x);
-    checkTrue(BigInt(200) >= x);
-    checkTrue(x >= BigInt(50));
-    checkTrue(x >= BigInt(-500));
-    checkTrue(BigInt(-200) >= BigInt(-500));
-    checkTrue(BigInt(0) == -BigInt(0));
-
-    checkEqual(BigInt(10) + BigInt(10), "20");
-    checkEqual(BigInt(-10) + BigInt(10), "0");
-    checkEqual(BigInt(10) + BigInt(-10), "0");
-    checkEqual(BigInt(-10) + BigInt(-10), "-20");
-
-    checkEqual(BigInt(10) - BigInt(10), "0");
-    checkEqual(BigInt(-10) - BigInt(10), "-20");
-    checkEqual(BigInt(10) - BigInt(-10), "20");
-    checkEqual(BigInt(-10) - BigInt(-10), "0");
-
-    checkEqual(BigInt(0) + BigInt(-1), "-1");
-    checkEqual(BigInt(0) - BigInt(1), "-1");
+   	assert(toString(BigInt(-1) + BigInt(1)) == "0");
     
+    BigInt a("12318293745912834182634781263489123956");
+    BigInt b = a + a;
+    assert(toString(b) == "24636587491825668365269562526978247912");
+    assert(toString(a - a) == "0");
+
+    BigInt c("-12318293745912834182634781263489123956");
+    assert(c + c == -b);
 	return 0;
 }
