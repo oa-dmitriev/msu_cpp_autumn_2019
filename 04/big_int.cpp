@@ -52,7 +52,6 @@ public:
     }
 
     BigInt(const std::string& str) {
-
         std::string s = str;
         if (s[0] == '-') {
             sign_ = 1;
@@ -215,7 +214,6 @@ public:
     }
 
     BigInt operator-(const BigInt& other) const {
-
         return -other + *this;
     }
 
@@ -236,9 +234,11 @@ public:
     bool operator!=(const BigInt& other) const {
         return !(*this == other);
     }
+
     bool operator<=(const BigInt& other) const {
         return (*this < other || *this == other);
     }
+
     bool operator>=(const BigInt& other) const {
         return (*this > other || *this == other);
     }
@@ -246,12 +246,16 @@ public:
     int* getNum() const {
         return arr_;
     }
+
     size_t getSize() const {
         return size_;
     }
+
     int getSign() const {
         return sign_;
     }
+    
+private:
     int* arr_;
     int size_;
     int sign_;
