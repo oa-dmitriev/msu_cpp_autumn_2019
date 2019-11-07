@@ -8,8 +8,12 @@
 const int base = 1000000000;
 class BigInt {
 public:
-    BigInt(int* arr, size_t size, int sign) : 
-            arr_(arr), size_(size), sign_(sign) {}
+    BigInt(int* arr, size_t size, int sign) {
+        arr_ = new int[size];
+        memcpy(arr_, arr, size * sizeof(int));
+        sign_ = sign;
+        size_ = size;
+    }
 
     BigInt() {
         arr_ = new int[1];
@@ -30,7 +34,26 @@ public:
         size_ = 1;
     }
 
+    BigInt(const BigInt& other) {
+        arr_ = new int[other.getSize()];
+        memcpy(arr_, other.getNum(), other.getSize() * sizeof(int));
+        sign_ = other.getSign();
+        size_ = other.getSize();
+    }
+
+    BigInt& operator=(const BigInt& other) {
+        std::cout << "SDF " << std::endl;
+        int* arr = new int[other.getSize()];
+        memcpy(arr, other.getNum(), other.getSize() * sizeof(int));
+        delete[] arr_;
+        arr_ = arr;
+        sign_ = other.getSign();
+        size_ = other.getSize();
+        return *this;
+    }
+
     BigInt(const std::string& str) {
+
         std::string s = str;
         if (s[0] == '-') {
             sign_ = 1;
@@ -52,6 +75,10 @@ public:
                 arr_[j] = atoi(s.substr(i - 9, 9).c_str());
             }
         }
+    }
+
+    ~BigInt() {
+        delete[] arr_;
     }
 
     bool compare(int* a, size_t sza, int* b, size_t szb) const {
@@ -184,10 +211,12 @@ public:
             arr = get_subtr(other.getNum(), other.getSize(), arr_, size_, sz);
             sign = other.getSign();
         }
-        return BigInt(arr, sz, sign);
+        BigInt temp(arr, sz, sign);
+        return temp;
     }
 
     BigInt operator-(const BigInt& other) const {
+
         return -other + *this;
     }
 
@@ -200,9 +229,7 @@ public:
     }
 
     BigInt operator-() const {
-        int* arr = new int[size_];
-        memcpy(arr, arr_, size_ * sizeof(int));
-        return BigInt(arr, size_, (sign_ + 1) % 2);
+        return BigInt(arr_, size_, (sign_ + 1) % 2);
     }
 
     bool operator!=(const BigInt& other) const {
@@ -293,7 +320,6 @@ int main() {
     assert(toString(-BigInt(10) + BigInt(10)) == "0");
 
     assert(toString(BigInt(-1) + BigInt(1)) == "0");
-    
     BigInt a("12318293745912834182634781263489123956");
     BigInt b = a + a;
     assert(toString(b) == "24636587491825668365269562526978247912");
