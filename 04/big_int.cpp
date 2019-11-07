@@ -9,8 +9,7 @@ const int base = 1000000000;
 class BigInt {
 public:
     BigInt(int* arr, size_t size, int sign) {
-        arr_ = new int[size];
-        memcpy(arr_, arr, size * sizeof(int));
+        arr_ = arr;
         sign_ = sign;
         size_ = size;
     }
@@ -229,7 +228,9 @@ public:
     }
 
     BigInt operator-() const {
-        return BigInt(arr_, size_, (sign_ + 1) % 2);
+        int* arr = new int[size_];
+        memcpy(arr, arr_, size_ * sizeof(int));
+        return BigInt(arr, size_, (sign_ + 1) % 2);
     }
 
     bool operator!=(const BigInt& other) const {
