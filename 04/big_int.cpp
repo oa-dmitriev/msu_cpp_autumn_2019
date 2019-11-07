@@ -41,7 +41,6 @@ public:
     }
 
     BigInt& operator=(const BigInt& other) {
-        std::cout << "SDF " << std::endl;
         int* arr = new int[other.getSize()];
         memcpy(arr, other.getNum(), other.getSize() * sizeof(int));
         delete[] arr_;
@@ -254,7 +253,7 @@ public:
     int getSign() const {
         return sign_;
     }
-    
+
 private:
     int* arr_;
     int size_;
