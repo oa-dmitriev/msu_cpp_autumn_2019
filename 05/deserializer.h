@@ -61,6 +61,7 @@ public:
     Error process(T& val) {
         return Error::CorruptedArchive;
     }
+    
 private:
     std::istream& in_;
 };

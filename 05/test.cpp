@@ -20,6 +20,22 @@ struct Data {
     }
 };
 
+struct BadData {
+    double a;
+    int b;
+    short c;
+
+    template <class Serializer>
+    Error serialize(Serializer& serializer) {
+        return serializer(a, b, c);
+    }
+
+    template <class Deserializer>
+    Error deserialize(Deserializer& deserializer) {
+        return deserializer(a, b, c);
+    }
+};
+
 int main() {
     Data x {1, true, 2};
 
@@ -47,5 +63,13 @@ int main() {
     assert(x.a == y.a);
     assert(x.b == y.b);
     assert(x.c == y.c);
+
+    stream.str(std::string());
+    BadData z {3.14, 2, 3};
+    serializer.save(z);
+    
+    const Error err1 = deserializer.load(y);
+    assert(err1 == Error::CorruptedArchive);
+
     return 0;
 }
