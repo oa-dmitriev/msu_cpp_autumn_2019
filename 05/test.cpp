@@ -1,5 +1,6 @@
 #include <iostream>
 #include "serializer.h"
+#include "deserializer.h"
 #include <sstream>
 #include <cassert>
 
@@ -32,6 +33,16 @@ int main() {
     Deserializer deserializer(stream);
     const Error err = deserializer.load(y);
     assert(err == Error::NoError);
+
+    assert(x.a == y.a);
+    assert(x.b == y.b);
+    assert(x.c == y.c);
+    stream.str(std::string());
+
+    x.a = 100;
+    x.b = false;
+    serializer.save(x);
+    deserializer.load(y);
 
     assert(x.a == y.a);
     assert(x.b == y.b);
