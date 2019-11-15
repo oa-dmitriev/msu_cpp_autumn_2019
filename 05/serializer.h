@@ -22,7 +22,7 @@ public:
     }
 
     template <class... ArgsT>
-    Error operator()(ArgsT... args) {
+    Error operator()(ArgsT&&... args) {
         return process(std::forward<ArgsT>(args)...);
     }
 
@@ -52,11 +52,6 @@ public:
     template <class T>
     Error process(T& val) {
         return Error::CorruptedArchive;
-    }
-
-    template <class T>
-    Error process(T&& val) {
-        return process(val);
     }
     
 private:
