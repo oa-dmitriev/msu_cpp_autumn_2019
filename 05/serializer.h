@@ -35,6 +35,11 @@ public:
         return Error::CorruptedArchive;
     }
 
+    template <class T>
+    Error process(T& val) {
+        return Error::CorruptedArchive;
+    }
+    
     Error process(bool& val) {
         if (val) {
             out_ << "true" << Separator;
@@ -47,11 +52,6 @@ public:
     Error process(uint64_t& val) {
         out_ << val << Separator;
         return Error::NoError;
-    }
-
-    template <class T>
-    Error process(T& val) {
-        return Error::CorruptedArchive;
     }
     
 private:
