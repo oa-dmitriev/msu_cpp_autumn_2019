@@ -27,8 +27,8 @@ public:
     }
 
     template <class T>
-    Error process(T&& val) {
-        return process(val);
+    Error process(T& val) {
+        return Error::CorruptedArchive;
     }
 
     Error process(bool& val) {
@@ -55,11 +55,6 @@ public:
             return Error::CorruptedArchive;
         }
         return Error::NoError;
-    }
-
-    template <class T>
-    Error process(T& val) {
-        return Error::CorruptedArchive;
     }
     
 private:
