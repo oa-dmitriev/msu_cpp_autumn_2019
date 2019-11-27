@@ -48,6 +48,7 @@ public:
         ++ptr_;
         return *this;
     }
+
 private:
     pointer ptr_;
 };
@@ -76,6 +77,7 @@ public:
         --ptr_;
         return *this;
     }
+    
 private:
     pointer ptr_;
 };
