@@ -4,23 +4,23 @@
 #include <memory>
 #include <cassert>
 #include <utility>
+#include <cstring>
+#include <algorithm>
 
 template <class T>
 class Allocator {
 public:
     using value_type = T;
-    using unique_pointer = std::unique_ptr<value_type[]>;
+    using pointer = T*;
     using size_type = size_t;
 
-    unique_pointer allocate(size_type n) {
-        auto newData = std::make_unique<value_type[]>(n);
-        return newData;
+    inline pointer allocate(size_type n) {
+        return reinterpret_cast<pointer>(
+                    ::operator new(n * sizeof(value_type)));
     }
 
-    void deallocate(unique_pointer& p, size_type n) {
-        auto newData = std::make_unique<value_type[]>(n);
-        std::copy(p.get(), p.get() + n, newData.get());
-        p.swap(newData);
+    inline void deallocate(pointer p, size_type n) {
+       ::operator delete(p);
     }
 };
 
@@ -73,7 +73,7 @@ public:
         return *ptr_;
     }
 
-    ReverseIterator operator++() {
+    ReverseIterator& operator++() {
         --ptr_;
         return *this;
     }
@@ -88,6 +88,7 @@ public:
     using value_type = T;
     using size_type = size_t;
     using reference = T&;
+    using pointer = T*;
     using const_reference = const T&;
     using iterator = Iterator<T>;
     using reverse_iterator = ReverseIterator<T>;
@@ -96,28 +97,36 @@ public:
         data_ = alloc_.allocate(size);
     }
 
+    ~Vector() {
+        std::for_each(data_, data_ + size_, [](value_type& a){
+            pointer ptr = &a;
+            ptr-> ~value_type();
+        });
+        alloc_.deallocate(data_, capacity_);
+    }
+
     iterator begin() noexcept {
-        return iterator(data_.get());
+        return iterator(data_);
     }
 
     iterator end() noexcept {
-        return iterator(data_.get() + size_);
+        return iterator(data_ + size_);
     }
 
     reverse_iterator rbegin() noexcept {
-        return reverse_iterator(data_.get() + size_ - 1);
+        return reverse_iterator(data_ + size_ - 1);
     }
 
     reverse_iterator rend() noexcept {
-        return reverse_iterator(data_.get() - 1);
+        return reverse_iterator(data_ - 1);
     }
 
     reference operator[](size_type i) {
-        return *(iterator(data_.get() + i));
+        return *(iterator(data_ + i));
     }
 
     const_reference operator[](size_type i) const {
-        return *(iterator(data_.get() + i));
+        return *(iterator(data_ + i));
     }
 
     bool empty() const noexcept {
@@ -134,52 +143,66 @@ public:
 
     void resize(size_type n) {
         if (size_ > n) {
+            std::for_each(data_ + n, data_ + size_, [](value_type& a){
+                pointer ptr = &a;
+                ptr-> ~value_type();
+            });
             size_ = n;
             return;
         }
         if (size_ < n) {
             if (capacity_ <= n) {
-                auto newData = std::make_unique<value_type[]>(n);
-                std::copy(data_.get(), data_.get() + size_, newData.get());
-                data_.swap(newData);
+                pointer newData = alloc_.allocate(n);
+                memcpy(newData, data_, size_ * sizeof(value_type));
+                alloc_.deallocate(data_, capacity_);
+                data_ = newData;
                 capacity_ = n;
             }
-            value_type t{};
-            iterator begin = end();
+            std::for_each(data_ + size_, data_ + n, 
+                    [](value_type& a){ new(&a) value_type{}; });
             size_ = n;
-            std::fill(begin, end(), t);
         }
     }
 
     void reserve(size_type n) {
         if (n > capacity_) {
-            auto newData = std::make_unique<value_type[]>(n);
-            std::copy(data_.get(), data_.get() + size_, newData.get());
-            data_.swap(newData);
+            pointer newData = alloc_.allocate(n);
+            memcpy(newData, data_, size_ * sizeof(value_type));
+            alloc_.deallocate(data_, capacity_);
+            data_ = newData;
             capacity_ = n;
         }
     }
 
     void clear() {
+        std::for_each(data_, data_ + size_, [](value_type& a){
+            pointer ptr = &a;
+            ptr-> ~value_type();
+        });
         size_ = 0;
     }
 
     void push_back(const_reference value) {
         if (capacity_ <= size_) {
-            size_type newSize = 2 * size_ + 1;
-            alloc_.deallocate(data_, newSize);
-            capacity_ = newSize;
+            size_type newCap = 2 * capacity_ + 1;
+            pointer newData = alloc_.allocate(newCap);
+            memcpy(newData, data_, size_ * sizeof(value_type));
+            alloc_.deallocate(data_, capacity_);
+            data_ = newData;
+            capacity_ = newCap;
         }
-        *iterator(data_.get() + size_) = value;
+        new(data_ + size_) value_type{value};
         ++size_;
     }
 
     void pop_back() {
+        pointer ptr = data_ + size_ - 1;
+        ptr-> ~value_type();
         --size_;
     }
 
 private:
-    std::unique_ptr<value_type[]> data_;
+    pointer data_;
     size_type size_;
     size_type capacity_;
     Alloc alloc_;
@@ -265,18 +288,5 @@ int main() {
     assert(v.size() == 2);
     assert(v[0] == 0);
     assert(v[1] == 0);
-
-
-
-    Vector<std::string> s;
-    s.push_back("sdfasd");
-    
-    auto b = s.begin();
-    assert(*b == "sdfasd");
-
-    s.resize(2);
-    b = s.begin();
-    ++b;
-    assert(*b == "");
     return 0;
 }
