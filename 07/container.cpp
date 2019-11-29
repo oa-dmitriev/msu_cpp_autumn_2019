@@ -22,6 +22,10 @@ public:
     inline void deallocate(pointer p, size_type n) {
        ::operator delete(p);
     }
+
+    inline void destroy(pointer p) {
+        p->~value_type();
+    }
 };
 
 template <class T>
@@ -98,11 +102,8 @@ public:
     }
 
     ~Vector() {
-        std::for_each(data_, data_ + size_, [](value_type& a){
-            pointer ptr = &a;
-            ptr-> ~value_type();
-        });
-        alloc_.deallocate(data_, capacity_);
+        std::for_each(data_, data_ + size_, 
+                [this](value_type& a){ alloc_.destroy(&a); });
     }
 
     iterator begin() noexcept {
@@ -143,10 +144,8 @@ public:
 
     void resize(size_type n) {
         if (size_ > n) {
-            std::for_each(data_ + n, data_ + size_, [](value_type& a){
-                pointer ptr = &a;
-                ptr-> ~value_type();
-            });
+            std::for_each(data_ + n, data_ + size_, 
+                    [this](value_type& a){ alloc_.destroy(&a); });
             size_ = n;
             return;
         }
@@ -175,10 +174,8 @@ public:
     }
 
     void clear() {
-        std::for_each(data_, data_ + size_, [](value_type& a){
-            pointer ptr = &a;
-            ptr-> ~value_type();
-        });
+        std::for_each(data_, data_ + size_, 
+                [this](value_type& a){ alloc_.destroy(&a); });
         size_ = 0;
     }
 
@@ -197,7 +194,7 @@ public:
 
     void pop_back() {
         pointer ptr = data_ + size_ - 1;
-        ptr-> ~value_type();
+        alloc_.destroy(ptr);
         --size_;
     }
 
@@ -288,5 +285,18 @@ int main() {
     assert(v.size() == 2);
     assert(v[0] == 0);
     assert(v[1] == 0);
+
+
+
+
+    // Vector<std::string> s;
+    // s.push_back("sdfasd");
+    
+    // auto b = s.begin();
+    // assert(*b == "sdfasd");
+    // s.resize(2);
+    // b = s.begin();
+    // ++b;
+    // assert(*b == "");
     return 0;
 }
