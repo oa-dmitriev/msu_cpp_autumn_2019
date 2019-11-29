@@ -285,18 +285,5 @@ int main() {
     assert(v.size() == 2);
     assert(v[0] == 0);
     assert(v[1] == 0);
-
-
-
-
-    // Vector<std::string> s;
-    // s.push_back("sdfasd");
-    
-    // auto b = s.begin();
-    // assert(*b == "sdfasd");
-    // s.resize(2);
-    // b = s.begin();
-    // ++b;
-    // assert(*b == "");
     return 0;
 }
