@@ -15,16 +15,19 @@ public:
     using size_type = size_t;
 
     inline pointer allocate(size_type n) {
-        return reinterpret_cast<pointer>(
-                    ::operator new(n * sizeof(value_type)));
+        return reinterpret_cast<pointer>(operator new(n * sizeof(value_type)));
     }
 
-    inline void deallocate(pointer p, size_type n) {
-       ::operator delete(p);
+    inline void deallocate(pointer p) {
+       operator delete(p);
     }
 
     inline void destroy(pointer p) {
         p->~value_type();
+    }
+
+    inline void construct(pointer p, value_type&& val) {
+        new (p) value_type(val);
     }
 };
 
@@ -152,8 +155,10 @@ public:
         if (size_ < n) {
             if (capacity_ <= n) {
                 pointer newData = alloc_.allocate(n);
-                memcpy(newData, data_, size_ * sizeof(value_type));
-                alloc_.deallocate(data_, capacity_);
+                for (int i = 0; i < size_; ++i) {
+                    alloc_.construct(newData + i, std::move(*(data_ + i)));
+                }
+                alloc_.deallocate(data_);
                 data_ = newData;
                 capacity_ = n;
             }
@@ -166,8 +171,10 @@ public:
     void reserve(size_type n) {
         if (n > capacity_) {
             pointer newData = alloc_.allocate(n);
-            memcpy(newData, data_, size_ * sizeof(value_type));
-            alloc_.deallocate(data_, capacity_);
+            for (int i = 0; i < size_; ++i) {
+                alloc_.construct(newData + i, std::move(*(data_ + i)));
+            }
+            alloc_.deallocate(data_);
             data_ = newData;
             capacity_ = n;
         }
@@ -183,8 +190,10 @@ public:
         if (capacity_ <= size_) {
             size_type newCap = 2 * capacity_ + 1;
             pointer newData = alloc_.allocate(newCap);
-            memcpy(newData, data_, size_ * sizeof(value_type));
-            alloc_.deallocate(data_, capacity_);
+            for (int i = 0; i < size_; ++i) {
+                alloc_.construct(newData + i, std::move(*(data_ + i)));
+            }
+            alloc_.deallocate(data_);
             data_ = newData;
             capacity_ = newCap;
         }
@@ -285,5 +294,16 @@ int main() {
     assert(v.size() == 2);
     assert(v[0] == 0);
     assert(v[1] == 0);
+
+
+    Vector<std::string> s;
+    s.push_back("sdfasd");
+    
+    auto b = s.begin();
+    assert(*b == "sdfasd");
+    s.resize(2);
+    b = s.begin();
+    ++b;
+    assert(*b == "");
     return 0;
 }
