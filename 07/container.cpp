@@ -162,8 +162,9 @@ public:
                 data_ = newData;
                 capacity_ = n;
             }
-            std::for_each(data_ + size_, data_ + n, 
-                    [](value_type& a){ new(&a) value_type{}; });
+            std::for_each(data_ + size_, data_ + n, [this](value_type& a) {
+                alloc_.construct(&a, std::move(value_type{})); 
+            });
             size_ = n;
         }
     }
@@ -197,7 +198,7 @@ public:
             data_ = newData;
             capacity_ = newCap;
         }
-        new(data_ + size_) value_type{value};
+        alloc_.construct(data_ + size_, std::move(value_type{value}));
         ++size_;
     }
 
