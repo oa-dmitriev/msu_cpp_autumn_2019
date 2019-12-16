@@ -68,7 +68,6 @@ private:
     std::vector<std::thread> mThreads_;
     std::queue<Task> mTasks_;
     size_t poolSize_;
-    
 };
 
 struct A {};
