@@ -78,8 +78,8 @@ void mergePair(const char* fn0, const char* fn1, size_t i) {
 	}
 	if (!ifs1) {
 		if (rename(fn0, os.str().c_str()) != 0) {
-			std::cerr << "couldn't rename file " << fn0 << " at " << 
-					__LINE__ << std::endl;
+			std::cerr << "couldn't rename file " << fn0 << " to " 
+					<< os.str() << " at " <<__LINE__ << std::endl;
 			exit(1);
 		}
 		return;
@@ -131,7 +131,7 @@ void mergePair(const char* fn0, const char* fn1, size_t i) {
 	}
 	out.close();
 	if (rename("merged.dat", os.str().c_str()) != 0) {
-		std::cerr << "couldn't rename merged.dat to " << os.str().c_str() << 
+		std::cerr << "couldn't rename merged.dat to " << os.str() << 
 				" at " << __LINE__ << std::endl;
 		exit(1);
 	}
