@@ -5,6 +5,7 @@
 #include <sstream>
 #include <algorithm>
 #include "pool.h"
+#include <cstring>
 
 template <class T>
 void print(const std::vector<T>& v) {
@@ -21,8 +22,8 @@ void sortAndWrite(std::vector<T>& v, size_t i) {
 	os << "run" << i << ".dat";
 	std::ofstream out(os.str(), std::ios::binary | std::ios::out);
 	if (!out) {
-		std::cerr << "couldn't open file " << os.str() << 
-				" at " << __LINE__ << std::endl;
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);
 	}
 	out.write(reinterpret_cast<char*>(v.data()), v.size() * sizeof(T));
@@ -67,19 +68,19 @@ void mergePair(const char* fn0, const char* fn1, size_t i) {
 	std::ifstream ifs1(fn1, std::ios::binary | std::ios::in | std::ios::ate);
 	std::ofstream out("merged.dat", std::ios::binary | std::ios::out);
 	if (!out) {
-		std::cerr << "couldn't create file merged.dat at " << 
-				__LINE__ << std::endl;
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);
 	}
 	if (!ifs0) {
-		std::cerr << "couldn't open file " << fn0 << " at " << 
-				__LINE__ << std::endl;
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);	
 	}
 	if (!ifs1) {
 		if (rename(fn0, os.str().c_str()) != 0) {
-			std::cerr << "couldn't rename file " << fn0 << " to " 
-					<< os.str() << " at " <<__LINE__ << std::endl;
+			std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 			exit(1);
 		}
 		return;
@@ -120,19 +121,19 @@ void mergePair(const char* fn0, const char* fn1, size_t i) {
 	ifs0.close();
 	ifs1.close();
 	if (remove(fn0) != 0) {
-		std::cerr << "couldn't remove file " << fn0 << " at " << 
-				__LINE__ << std::endl;
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);
 	}
 	if (remove(fn1) != 0) {
-		std::cerr << "couldn't remove file " << fn1 << " at " << 
-				__LINE__ << std::endl;
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);
 	}
 	out.close();
 	if (rename("merged.dat", os.str().c_str()) != 0) {
-		std::cerr << "couldn't rename merged.dat to " << os.str() << 
-				" at " << __LINE__ << std::endl;
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);
 	}
 }
@@ -143,21 +144,22 @@ void mergeAllFiles(size_t numsRun) {
 		const char* oldName = "run0.dat";
 		const char* newName = "result.dat";
 		if (rename(oldName, newName) != 0) {
-			std::cerr << "couldn't rename " << oldName << " to " << newName << 
+			std::cerr << "ERROR: " << strerror(errno) << 
 					" at " << __LINE__ << std::endl;
 			exit(1);
 		}
 		return;
 	}
 	size_t newRun;
-	
-	ThreadPool tp(2);
-	for (size_t i = 0; i < numsRun; i += 2) {
-		newRun = i / 2;
-		std::ostringstream os0, os1;
-		os0 << "run" << i << ".dat";
-		os1 << "run" << i + 1 << ".dat";
-		tp.exec(mergePair<T>, os0.str().c_str(), os1.str().c_str(), newRun);
+	{
+		ThreadPool tp(2);
+		for (size_t i = 0; i < numsRun; i += 2) {
+			newRun = i / 2;
+			std::ostringstream os0, os1;
+			os0 << "run" << i << ".dat";
+			os1 << "run" << i + 1 << ".dat";
+			tp.exec(mergePair<T>, os0.str().c_str(), os1.str().c_str(), newRun);
+		}
 	}
 	mergeAllFiles<T>(newRun + 1);
 }
@@ -169,7 +171,8 @@ int main() {
 	std::ifstream ifs("data.dat", std::ios::binary | 
 			std::ios::in | std::ios::ate);
 	if (!ifs) {
-		std::cerr << "couldn't open file at " << __LINE__ << '\n';
+		std::cerr << "ERROR: " << strerror(errno) << 
+					" at " << __LINE__ << std::endl;
 		exit(1);
 	}
 	std::streampos fsize = ifs.tellg();
@@ -177,24 +180,25 @@ int main() {
 	std::streampos cur = ifs.tellg();	
 	std::vector<type> v;
 	size_t numsRun;
-	
-	ThreadPool tp(2);
-	for (numsRun = 0; fsize - cur > 0; ++numsRun) {
-		size_t bytesLeft = fsize - cur;
-		size_t numsLeft = bytesLeft / sizeof(type);
-		if (numsLeft < SIZE) {
-			v.resize(numsLeft);
-			ifs.read(reinterpret_cast<char*>(v.data()), bytesLeft);
+	{
+		ThreadPool tp(2);
+		for (numsRun = 0; fsize - cur > 0; ++numsRun) {
+			size_t bytesLeft = fsize - cur;
+			size_t numsLeft = bytesLeft / sizeof(type);
+			if (numsLeft < SIZE) {
+				v.resize(numsLeft);
+				ifs.read(reinterpret_cast<char*>(v.data()), bytesLeft);
+				tp.exec(sortAndWrite<type>, std::ref(v), numsRun);
+				numsRun++;
+				break;	
+			}
+			v.resize(SIZE);
+			ifs.read(reinterpret_cast<char*>(v.data()), SIZE * sizeof(type));
 			tp.exec(sortAndWrite<type>, std::ref(v), numsRun);
-			numsRun++;
-			break;	
+			cur = ifs.tellg();
 		}
-		v.resize(SIZE);
-		ifs.read(reinterpret_cast<char*>(v.data()), SIZE * sizeof(type));
-		tp.exec(sortAndWrite<type>, std::ref(v), numsRun);
-		cur = ifs.tellg();
+		ifs.close();
 	}
-	ifs.close();
 	mergeAllFiles<type>(numsRun);
 	return 0;
 }

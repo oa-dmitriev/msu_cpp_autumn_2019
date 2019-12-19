@@ -13,7 +13,7 @@ public:
     using Lock = std::unique_lock<std::mutex>;
 
     explicit ThreadPool(size_t poolSize) 
-            : poolSize_(poolSize), mStop_(false), count_(0) {
+            : poolSize_(poolSize), mStop_(false) {
         for (auto i = 0u; i < poolSize_; ++i) {
             auto thread = [=]{
                 while (true) {
@@ -23,7 +23,7 @@ public:
                         cv_.wait(lock, [=] { 
                             return mStop_ || !mTasks_.empty();
                         });
-                        if (mStop_ && mTasks_.empty() || count_ > poolSize_) {
+                        if (mStop_ && mTasks_.empty()) {
                             break;
                         }
                         task = std::move(mTasks_.front());
@@ -55,7 +55,6 @@ public:
             mTasks_.emplace([=] { (*wrapper)(args...); });
         }
         cv_.notify_one();
-        ++count_;
         return wrapper->get_future();	
     }
     
@@ -63,7 +62,6 @@ private:
     std::mutex m_;
     std::condition_variable cv_;
     std::atomic<bool> mStop_;
-    std::atomic<size_t> count_;
     std::vector<std::thread> mThreads_;
     std::queue<Task> mTasks_;
     size_t poolSize_;
