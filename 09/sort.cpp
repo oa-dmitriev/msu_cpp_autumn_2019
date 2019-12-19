@@ -4,30 +4,35 @@
 #include <iterator>
 #include <sstream>
 #include <algorithm>
-#include "pool.h"
 #include <cstring>
+#include <exception>
+#include "pool.h"
 
-template <class T>
-void print(const std::vector<T>& v) {
-	for (auto& i : v) {
-		std::cout << i << " ";
-	}
-	std::cout << '\n';
-}
+class BadFile : std::exception {
+public:
+	BadFile(const std::string& msg, size_t line)
+		: msg_(msg + " in " + __FILE__ + 
+			" at line " + std::to_string(line) + ".") {}
 
+	const char* what() const noexcept {
+		return msg_.c_str();
+	}	
+	
+private:
+	std::string msg_;
+};
+	
 template <class T>
 void sortAndWrite(std::vector<T>& v, size_t i) {
 	sort(v.begin(), v.end());
 	std::ostringstream os;
 	os << "run" << i << ".dat";
 	std::ofstream out(os.str(), std::ios::binary | std::ios::out);
-	if (!out) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);
+	if (!out) {	
+		throw BadFile(std::string("couldn't open a file " + 
+			 	       	os.str()), __LINE__);
 	}
 	out.write(reinterpret_cast<char*>(v.data()), v.size() * sizeof(T));
-	out.close();
 }
 
 template <class T>
@@ -64,24 +69,23 @@ void mergePair(const char* fn0, const char* fn1, size_t i) {
 	const size_t SIZE = 8 * 1024 * 1024 / sizeof(T) / numThreads / 2;
 	std::ostringstream os;
 	os << "run" << i << ".dat";
-	std::ifstream ifs0(fn0, std::ios::binary | std::ios::in | std::ios::ate);
-	std::ifstream ifs1(fn1, std::ios::binary | std::ios::in | std::ios::ate);
+	std::ifstream ifs0(fn0, std::ios::binary | 
+			std::ios::in | std::ios::ate);
+	std::ifstream ifs1(fn1, std::ios::binary | 
+			std::ios::in | std::ios::ate);
 	std::ofstream out("merged.dat", std::ios::binary | std::ios::out);
 	if (!out) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);
+		throw BadFile(std::string("couldn't open a file merged.dat"),
+				 __LINE__);	
 	}
 	if (!ifs0) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);	
+		throw BadFile(std::string("couldn't open a file ") +
+				fn0, __LINE__);
 	}
 	if (!ifs1) {
 		if (rename(fn0, os.str().c_str()) != 0) {
-			std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-			exit(1);
+			throw BadFile(std::string("couldn't rename ")
+					 + fn0 + " to " + os.str(), __LINE__);
 		}
 		return;
 	}
@@ -110,43 +114,40 @@ void mergePair(const char* fn0, const char* fn1, size_t i) {
 			size1 = numsLeft1;
 			v1.resize(numsLeft1);
 		}	
-		ifs0.read(reinterpret_cast<char*>(v0.data()), size0 * sizeof(T));
-		ifs1.read(reinterpret_cast<char*>(v1.data()), size1 * sizeof(T));
+		ifs0.read(reinterpret_cast<char*>(v0.data()), 
+				size0 * sizeof(T));
+		ifs1.read(reinterpret_cast<char*>(v1.data()), 
+				size1 * sizeof(T));
 		v.resize(size0 + size1);
 		merge<T>(v, v0, v1);
-		out.write(reinterpret_cast<char*>(v.data()), v.size() * sizeof(T));
+		out.write(reinterpret_cast<char*>(v.data()), 
+				v.size() * sizeof(T));
 		d0 = f0Size - ifs0.tellg();
 		d1 = f1Size - ifs1.tellg();
 	}
 	ifs0.close();
 	ifs1.close();
 	if (remove(fn0) != 0) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);
+		throw BadFile(std::string("couldn't remove file ") + fn0,
+				 __LINE__);
 	}
 	if (remove(fn1) != 0) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);
+		throw BadFile(std::string("couldn't remove file ") + fn1, 
+				__LINE__);
 	}
 	out.close();
 	if (rename("merged.dat", os.str().c_str()) != 0) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);
+		throw BadFile(std::string("couldn't rename merged.dat ") + 
+				"to " + os.str(), __LINE__);
 	}
 }
 
 template <class T>
 void mergeAllFiles(size_t numsRun) {
 	if (numsRun == 1) {
-		const char* oldName = "run0.dat";
-		const char* newName = "result.dat";
-		if (rename(oldName, newName) != 0) {
-			std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-			exit(1);
+		if (rename("run0.dat", "result.dat") != 0) {
+			throw BadFile("couldn't rename run0.dat to result.dat",
+					 __LINE__);
 		}
 		return;
 	}
@@ -158,22 +159,25 @@ void mergeAllFiles(size_t numsRun) {
 			std::ostringstream os0, os1;
 			os0 << "run" << i << ".dat";
 			os1 << "run" << i + 1 << ".dat";
-			tp.exec(mergePair<T>, os0.str().c_str(), os1.str().c_str(), newRun);
+			tp.exec(mergePair<T>, os0.str().c_str(), 
+					os1.str().c_str(), newRun);
 		}
 	}
 	mergeAllFiles<T>(newRun + 1);
 }
 
+void writeToLogFile(const char* msg) {
+	std::ofstream log("error.log", std::ios::out | std::ios::app);
+	log << msg << std::endl;
+}
 
-int main() {
+void sortFile(const std::string& file) {	
 	using type = uint32_t;
 	size_t SIZE = 8 * 1024 * 1024 / sizeof(type);
-	std::ifstream ifs("data.dat", std::ios::binary | 
+	std::ifstream ifs(file, std::ios::binary | 
 			std::ios::in | std::ios::ate);
 	if (!ifs) {
-		std::cerr << "ERROR: " << strerror(errno) << 
-					" at " << __LINE__ << std::endl;
-		exit(1);
+		throw BadFile("couldn't open file data.dat", __LINE__);
 	}
 	std::streampos fsize = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
@@ -187,18 +191,31 @@ int main() {
 			size_t numsLeft = bytesLeft / sizeof(type);
 			if (numsLeft < SIZE) {
 				v.resize(numsLeft);
-				ifs.read(reinterpret_cast<char*>(v.data()), bytesLeft);
-				tp.exec(sortAndWrite<type>, std::ref(v), numsRun);
+				ifs.read(reinterpret_cast<char*>(v.data()), 
+						bytesLeft);
+				tp.exec(sortAndWrite<type>, 
+						std::ref(v), numsRun);
 				numsRun++;
 				break;	
 			}
 			v.resize(SIZE);
-			ifs.read(reinterpret_cast<char*>(v.data()), SIZE * sizeof(type));
+			ifs.read(reinterpret_cast<char*>(v.data()), 
+					SIZE * sizeof(type));
 			tp.exec(sortAndWrite<type>, std::ref(v), numsRun);
 			cur = ifs.tellg();
 		}
-		ifs.close();
-	}
+	}	
+	ifs.close();
 	mergeAllFiles<type>(numsRun);
+}
+
+int main() {
+	try {
+		sortFile("data.dat");
+	} catch (BadFile& bf) {
+		writeToLogFile(bf.what());
+	} catch (...) {
+		writeToLogFile("Something really bad happened that shouldn't have");
+	}
 	return 0;
 }
